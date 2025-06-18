@@ -36,6 +36,8 @@ Zoom Meeting → RTMS → Your Service → AssemblyAI
 
 1. **Clone and install dependencies**:
 ```bash
+git clone https://github.com/AssemblyAI-Solutions/assemblyai-zoom-rtms.git
+cd assemblyai-zoom-rtms
 npm install
 ```
 
