@@ -1,467 +1,254 @@
-# RTMS Financial Consultation Intelligence - Node.js
+# Zoom RTMS + AssemblyAI Real-time Transcription Service
 
-This project demonstrates how to build an AI-powered financial consultation assistant using Zoom's RTMS (Real-Time Media Streaming) with AssemblyAI's Universal Streaming v3 and Anthropic's Claude for real-time conversation analysis.
+A Node.js service that captures audio from Zoom Real-Time Media Streams (RTMS) and provides both real-time and asynchronous transcription using AssemblyAI.
 
-## 🎯 What This System Does
+> 📖 **Official Documentation**: For complete Zoom RTMS documentation, visit [https://developers.zoom.us/docs/rtms/](https://developers.zoom.us/docs/rtms/)
 
-This intelligent assistant monitors financial consultation conversations in real-time and provides:
+## Features
 
-- **📝 Live Transcription**: Real-time speech-to-text using AssemblyAI's latest Universal Streaming v3 model with speaker identification
-- **💎 FAINT Qualification**: Tracks Funds, Authority, Interest, Need, and Timing throughout the conversation
-- **🧠 Smart Analysis**: Uses Claude AI to extract key insights and identify opportunities
-- **💡 Advisor Coaching**: Real-time suggestions and reminders for financial advisors
-- **⚠️ Concern Detection**: Identifies client worries and suggests addressing strategies
-- **❓ Strategic Questions**: AI-generated questions to gather more valuable information
-- **📊 Live Web Dashboard**: Beautiful web interface with real-time updates and dual-tab view
-- **👥 Speaker Management**: Assign roles (Consultant/Client) to different speakers in the meeting
+- **Real-time Transcription**: Live transcription during meetings using AssemblyAI's streaming API
+- **Asynchronous Transcription**: Complete post-meeting transcription with advanced features
+- **Flexible Audio Modes**: 
+  - Mixed stream (all participants combined)
+  - Individual participant streams transcribed
+- **Multichannel Audio Support**: Separate channels for different participants
+- **Configurable Processing**: Enable/disable real-time or async transcription independently
 
-## 🌐 Web Interface Features
+## Architecture
 
-### Dual-Tab Dashboard
-- **📊 Financial Intelligence Tab**: Live FAINT analysis, client insights, and advisor recommendations
-- **📝 Live Transcript Tab**: Real-time conversation transcript with speaker labels and timestamps
-- **👥 Speaker Controls**: Assign and manage speaker roles (Consultant/Client) during the meeting
-- **🔄 Configurable Refresh**: User-adjustable update intervals (500ms - 30000ms, default 3000ms)
-- **⏸️ Pause/Resume Controls**: Ability to pause updates when interacting with UI components
-- **🗂️ Collapsible Sections**: Show latest items by default with "Show All" expand functionality
-- **📱 Responsive Design**: Works seamlessly on desktop, tablet, and mobile
-- **🐛 Debug Mode**: Add `?debug=1` to URL for detailed logging and troubleshooting
+```
+Zoom Meeting → RTMS → Your Service → AssemblyAI
+                        ↓
+                    Audio Files → Full Transcripts
+```
 
-> [!TIP]
-> **Important UI Usage Notes:**
-> - **Pause refresh when changing speaker labels** to prevent interruption during role assignment
-> - **Pause refresh when expanding "Show All" sections** to avoid UI state conflicts
-> - **Use the ⏸️ Pause button** next to the update interval control for stable interaction with dropdown menus and expandable sections
-
-### Professional UI Features
-- **Modern Design**: Gradient backgrounds, smooth animations, and card-based layout
-- **Color-Coded Insights**: Visual distinction between concerns, questions, and reminders
-- **Speaker-Coded Transcripts**: Different colors for Consultant vs Client speech
-- **Status Indicators**: Real-time system health monitoring in the header
-- **Smart Data Preservation**: FAINT data and client information retained unless new updates are available
-- **Latest-First Display**: Show most recent items prominently with collapsible history
-- **Empty States**: Helpful messaging when waiting for consultation to begin
-
-### Data Management
-- **📝 Running Lists**: Client information, consultation summary, and other data types maintain historical records
-- **🔒 Data Preservation**: Existing FAINT qualification data is preserved unless new information is detected
-- **📊 Smart Updates**: AI only updates fields with genuinely new or changed information
-- **🗂️ Collapsible History**: View latest items by default, expand to see full history when needed
-
-## 🏗️ Setup
+## Setup
 
 ### Prerequisites
-- Node.js 18+ 
-- Zoom account with RTMS enabled
-- Zoom App SDK integration (for in-meeting access)
+
+- Node.js 16+
+- FFmpeg installed on your system
+- Zoom RTMS Developer Preview access
 - AssemblyAI API key
-- Anthropic API key
-- ffmpeg (for audio processing)
-- ngrok or similar tunneling service for development
-
-### Zoom App Configuration
-
-#### 1. Create a Zoom App
-1. Go to [Zoom Marketplace](https://marketplace.zoom.us/) and create a new app
-2. Choose "General App" type
-3. Fill in basic app information
-
-#### 2. Configure App Features
-Under the **App Features** section:
-
-**Zoom App SDK:**
-- Click the **+ Add APIs** button and enable the following options:
-  - **APIs**: `shareApp`
-  
-**Scopes:**
-- Ensure that the following scope is selected on the **Scopes** tab:
-  - `zoomapp:inmeeting`
-
-#### 3. RTMS Configuration
-1. Enable **Real-Time Media Streaming (RTMS)**
-2. Configure webhook URL: `https://your-domain.com/webhook`
-3. Enable webhook events:
-   - `meeting.rtms_started`
-   - `meeting.rtms_stopped`
-   - `endpoint.url_validation`
-
-#### 4. App URLs
-Configure the following URLs in your Zoom App:
-- **Home URL**: `https://your-domain.com/`
-- **Redirect URL**: `https://your-domain.com/`
+- ngrok (for local development and testing)
 
 ### Installation
 
 1. **Clone and install dependencies**:
 ```bash
-git clone https://github.com/zkleb-aai/rtms_assist_demo.git
-cd rtms-financial-consultation
 npm install
 ```
 
-2. **Install required packages**:
-```bash
-npm install 
-```
-
-### Configuration
-
-1. **Create environment file**:
+2. **Configure environment variables**:
 ```bash
 cp .env.example .env
 ```
 
-2. **Configure your .env file**:
+Fill in your `.env` file:
 ```env
-# Zoom RTMS Configuration
-ZOOM_SECRET_TOKEN=your_zoom_secret_token
+# Zoom Configuration
 ZM_CLIENT_ID=your_zoom_client_id
 ZM_CLIENT_SECRET=your_zoom_client_secret
+ZOOM_SECRET_TOKEN=your_webhook_secret_token
 
-# AI Services
-ASSEMBLYAI_API_KEY=your_assemblyai_api_key_here
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+# AssemblyAI Configuration
+ASSEMBLYAI_API_KEY=your_assemblyai_api_key
 
-# Development (optional)
-NODE_ENV=development
-DEBUG_MODE=false
+# Service Configuration
 PORT=8080
+REALTIME_ENABLED=true
+REALTIME_MODE=mixed
+ASYNC_ENABLED=true
+AUDIO_CHANNELS=mono
+AUDIO_SAMPLE_RATE=16000
+TARGET_CHUNK_DURATION_MS=100
 ```
 
-3. **Set up ngrok for development**:
-```bash
-# Install ngrok globally
-npm install -g ngrok
+### Local Development with ngrok
 
-# Start your app
+For testing and development, you can use ngrok to expose your local server to the internet:
+
+1. **Install ngrok**: Download from [ngrok.com](https://ngrok.com/) or install via package manager:
+   ```bash
+   # macOS
+   brew install ngrok
+   
+   # Windows (chocolatey)
+   choco install ngrok
+   
+   # Or download directly from ngrok.com
+   ```
+
+2. **Start your local server**:
+   ```bash
+   npm start
+   ```
+
+3. **In a separate terminal, start ngrok**:
+   ```bash
+   ngrok http 8080
+   ```
+
+4. **Copy the ngrok URL**: ngrok will display a forwarding URL like:
+   ```
+   Forwarding    https://abc123.ngrok-free.app -> http://localhost:8080
+   ```
+
+5. **Use the ngrok URL in your Zoom app webhook configuration**:
+   ```
+   https://abc123.ngrok-free.app/webhook
+   ```
+
+### Configuration Options
+
+#### Real-time Transcription
+- `REALTIME_ENABLED`: Enable/disable live transcription (default: `true`)
+- `REALTIME_MODE`: 
+  - `mixed`: Single stream with all participants combined
+  - `individual`: Separate streams per participant
+
+#### Audio Settings
+- `AUDIO_CHANNELS`: `mono` or `multichannel`
+- `AUDIO_SAMPLE_RATE`: Audio sample rate in Hz (default: `16000`)
+- `TARGET_CHUNK_DURATION_MS`: Audio chunk duration for streaming (default: `100`)
+
+#### Async Transcription
+- `ASYNC_ENABLED`: Enable/disable post-meeting transcription (default: `true`)
+
+## Usage
+
+### Start the Service
+
+```bash
 npm start
-
-# In another terminal, expose your app
-ngrok http 8080
 ```
 
-4. **Update Zoom App URLs**:
-   - Use your ngrok URL (e.g., `https://abc123.ngrok.io`) for all webhook and app URLs in the Zoom Marketplace configuration
-
-## 🚀 Usage
-
-### Start the System
-```bash
-npm start
+The service will start on the configured port (default: 8080) and display:
+```
+🎧 Zoom RTMS to AssemblyAI Transcription Service
+📋 Configuration:
+   Real-time: ✅ (mixed)
+   Audio: mono @ 16000Hz
+   Async: ✅
+🚀 Server running on port 8080
+📡 Webhook endpoint: http://localhost:8080/webhook
 ```
 
-The system will start on port 8080 and display:
+### Configure Zoom Webhook
+
+1. In your Zoom App configuration, set the webhook endpoint to:
+   ```
+   # For production
+   https://your-domain.com/webhook
+   
+   # For local development with ngrok
+   https://your-ngrok-url.ngrok-free.app/webhook
+   ```
+
+2. Subscribe to these events:
+   - `meeting.rtms_started`
+   - `meeting.rtms_stopped`
+
+### Testing with ngrok
+
+When using ngrok for testing:
+
+1. **Keep ngrok running**: The ngrok tunnel must remain active during testing
+2. **Update webhook URL**: If you restart ngrok, you'll get a new URL that needs to be updated in your Zoom app configuration
+3. **Monitor ngrok logs**: ngrok shows incoming webhook requests in its terminal output
+4. **Free tier limitations**: The free ngrok tier has some limitations; consider upgrading for heavy testing
+
+### Real-time Output
+
+During meetings, you'll see live transcription:
 ```
-🌐 Financial Consultation Intelligence System running at http://localhost:8080
-🔗 Webhook endpoint at http://localhost:8080/webhook
-🐛 Debug mode: ENABLED/DISABLED
-📋 UI UPDATES: Client info as running list, configurable intervals with pause/resume
-```
-
-### Access the Dashboard
-- **Direct Access**: Open `http://localhost:8080` in your browser
-- **In-Meeting Access**: Open the app from within a Zoom meeting using the Apps panel
-
-### Dashboard Controls
-
-#### Update Interval Configuration
-- **Default Interval**: 3000ms (3 seconds)
-- **Adjustable Range**: 500ms to 30000ms
-- **Settings Persistence**: Interval preferences saved in browser localStorage
-- **Real-Time Changes**: New interval applied immediately
-
-#### Pause/Resume Functionality
-- **⏸️ Pause Button**: Located next to update interval control
-- **When to Use Pause**:
-  - Before changing speaker role assignments
-  - When expanding "Show All" sections
-  - During detailed data review
-  - To prevent UI interruptions during interactions
-- **Visual Feedback**: Button changes to "▶️ Resume" when paused
-- **Status Display**: Pause state shown in all status messages
-
-### Start a Consultation
-1. **Join/Start a Zoom meeting**
-2. **Open the app** from the Zoom Apps panel (📱 Apps button in meeting toolbar)
-3. **Enable RTMS** if prompted
-4. The dashboard will automatically switch to "🟢 ACTIVE" status
-5. **Pause refresh** using the ⏸️ button before assigning speaker roles
-6. **Assign speaker roles** using the Speaker Assignment controls
-7. **Resume refresh** to continue monitoring
-8. Watch real-time transcription and AI analysis appear in both tabs
-9. Monitor financial insights as the conversation progresses
-
-### Speaker Management
-- **Auto-Detection**: System automatically detects when new speakers join
-- **Role Assignment**: Use dropdown controls to assign "Consultant" or "Client" roles
-- **⚠️ Best Practice**: Always pause refresh before changing speaker assignments
-- **Real-Time Updates**: Transcript labels update immediately when roles are changed
-- **Solo Testing**: First detected speaker is automatically assigned as "Consultant"
-
-### Data Interaction
-- **Latest-First View**: Most recent items displayed prominently
-- **"Show All" Expansion**: Click expand buttons to see full history
-- **⚠️ Best Practice**: Pause refresh before expanding sections to prevent UI conflicts
-- **Preserved Data**: FAINT qualification and other data retained unless genuinely updated
-
-## 🎭 System Flow
-
-1. **🎧 Zoom Connection**: Direct WebSocket connection to Zoom RTMS (no SDK required for audio)
-2. **👥 Speaker Detection**: Automatic speaker identification using Zoom's user_id system
-3. **🎙️ Audio Streaming**: Base64-decoded audio chunks sent to AssemblyAI in 250ms intervals
-4. **📝 Real-Time Transcription**: AssemblyAI v3 provides ultra-low latency speech-to-text with speaker labels
-5. **🤖 AI Analysis**: Claude 3.5 Sonnet analyzes each transcript segment for financial insights
-6. **🔒 Data Preservation**: Smart updates that preserve existing information unless new data is detected
-7. **📊 Live Updates**: Web dashboard refreshes at user-configurable intervals (default 3000ms)
-8. **💾 Data Persistence**: Conversation logs and final reports saved to `./consultation_logs/`
-
-## 📊 AI Analysis Features
-
-### FAINT Qualification Framework
-- **💰 Funds**: Financial capacity and assets identification
-- **👤 Authority**: Decision-making power assessment  
-- **🎯 Interest**: Engagement and investment appetite
-- **🎪 Need**: Financial goals and problems identification
-- **⏰ Timing**: Timeline for financial decisions
-- **🔒 Data Preservation**: Existing FAINT data retained unless new information is detected
-
-### Smart Coaching
-- **Consultation Summary**: Key developments extracted automatically (running list)
-- **Client Information**: Personal and financial background compilation (running list)
-- **Advisor Reminders**: AI-generated coaching suggestions (running list)
-- **Client Concerns**: Worry identification with addressing strategies (running list)
-- **Strategic Questions**: Specific questions to gather valuable information (running list)
-
-### Intelligent Data Management
-- **Incremental Updates**: Only update fields with new or changed information
-- **Historical Preservation**: Maintain full conversation context and data history
-- **Smart Field Detection**: AI identifies when to add vs. update vs. preserve data
-- **Running Lists**: All data types (except FAINT) maintain chronological records
-
-## 🛠️ Technical Architecture
-
-### Audio Processing Pipeline
-- **Direct RTMS Protocol**: WebSocket connection without SDK dependencies
-- **Speaker Identification**: Uses Zoom's user_id system for speaker tracking
-- **Base64 Audio Decoding**: Handles Zoom's JSON-based audio format
-- **Buffered Streaming**: 250ms chunks optimized for AssemblyAI v3
-- **Real-Time Processing**: Sub-second latency from speech to insights
-
-### Web Dashboard Architecture
-- **Express.js Backend**: RESTful API for dashboard data
-- **Configurable Updates**: User-adjustable refresh intervals with pause/resume
-- **Responsive Frontend**: Mobile-first design with CSS Grid/Flexbox
-- **Security Headers**: Helmet.js with Content Security Policy including HSTS
-- **State Management**: Intelligent UI state preservation during interactions
-- **Error Handling**: Graceful degradation and connection recovery
-
-### AI Integration
-- **Anthropic Claude 3.5**: Tool-based structured data extraction with smart field updates
-- **AssemblyAI v3**: Universal Streaming model with turn detection
-- **Conversation Context**: Full conversation history with speaker attribution
-- **Data Preservation**: Smart updates that preserve existing valuable information
-- **Real-Time Processing**: Insights generated as conversation progresses
-
-## 🔧 API Endpoints
-
-### Dashboard APIs
-- `GET /` - Main dashboard interface with configurable refresh and pause controls
-- `GET /api/status` - System health and status
-- `GET /api/dashboard` - Financial intelligence data
-- `GET /api/transcript` - Live transcript data
-- `GET /api/speakers` - Speaker detection and roles
-- `POST /api/speakers/assign` - Assign speaker roles
-- `GET /api/debug/speakers` - Debug speaker information
-- `GET /api/debug/speakers/detailed` - Detailed speaker analysis
-- `GET /api/debug/speakers/export` - Export speaker logs
-
-### Webhook Endpoints
-- `POST /webhook` - Zoom RTMS webhook handler
-
-## 📁 Output Files
-
-The system generates structured JSON files:
-- `consultation_logs/{meeting_id}.json` - Live conversation tracking with preserved data
-- `consultation_logs/{meeting_id}_final_report.json` - Complete analysis with full transcript and speaker mapping
-
-### Sample Output Structure
-```json
-{
-  "meetingId": "meeting_12345",
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "speakerMapping": [[0, "Consultant"], [1, "Client"]],
-  "conversationHistory": [...],
-  "financialData": {
-    "summary": [
-      "Client has $5M in assets", 
-      "Interested in portfolio diversification",
-      "Discussed risk tolerance preferences"
-    ],
-    "faint": {
-      "funds": "$5 million in bank deposits and investment accounts",
-      "authority": "Primary decision maker for family finances",
-      "interest": "High interest in wealth management and risk mitigation",
-      "need": "Portfolio diversification and retirement planning",
-      "timing": "Looking to implement strategy within 3 months"
-    },
-    "clientInfo": [
-      "Retired executive, age 65, conservative risk profile",
-      "Married with two adult children",
-      "Primary residence worth $2M, mortgage-free"
-    ],
-    "advisorReminders": [
-      "Follow up on risk tolerance questionnaire",
-      "Prepare estate planning discussion materials",
-      "Schedule follow-up meeting in 2 weeks"
-    ],
-    "concerns": [{
-      "concern": "Market volatility affecting retirement funds",
-      "addressing_strategy": "Discuss diversification strategies and conservative investment options"
-    }],
-    "strategicQuestions": [{
-      "question": "What percentage of your portfolio would you be comfortable having in higher-risk investments?",
-      "purpose": "To better understand risk tolerance and investment preferences"
-    }]
-  },
-  "fullTranscript": "Consultant: Good morning, thank you for meeting with me today..."
-}
+🚀 AssemblyAI session started: [abc12345]
+🎙️ [abc12345] Hello everyone, welcome to the meeting
+📝 [abc12345] FINAL: Hello everyone, welcome to the meeting.
 ```
 
-## 🔒 Security & Privacy
+### Post-meeting Files
 
-- **Secure Audio Handling**: Audio processed in real-time, not stored persistently
-- **Local Data Storage**: All conversation logs stored locally
-- **Environment Variables**: Secure API key management
-- **HTTPS Support**: Production-ready with proper SSL termination
-- **Security Headers**: Helmet.js with HSTS, CSP, and other OWASP-compliant headers
-- **Speaker Privacy**: Speaker identification handled securely with role-based labeling
-- **Financial Compliance**: Designed for regulated financial environments
-- **Data Preservation**: Smart updates preserve sensitive information appropriately
+After each meeting, the service generates:
+- `transcript_[meeting_uuid].json` - Full AssemblyAI response with metadata
+- `transcript_[meeting_uuid].txt` - Plain text transcript
 
-## 🐛 Debugging & Troubleshooting
+## Advanced Configuration
 
-### Debug Mode
-Add `?debug=1` to your URL to enable:
-- **Console Logging**: Detailed speaker detection and assignment logs
-- **Debug Panel**: Shows current speaker state and update intervals in the UI
-- **API Inspection**: Direct links to debug endpoints
-- **Performance Monitoring**: Update frequency and pause state tracking
+### AssemblyAI Features
 
-### Best Practices for UI Interaction
-1. **Before changing speaker assignments**: Click ⏸️ Pause to prevent interruption
-2. **Before expanding "Show All" sections**: Pause refresh to avoid state conflicts
-3. **During detailed data review**: Use pause to prevent screen updates
-4. **After UI interactions**: Resume refresh to continue monitoring
+Modify the `ASYNC_CONFIG` object in the code to enable additional features:
 
-### Common Issues
-
-1. **Speaker Assignment Dropdown Closes Unexpectedly**:
-   - **Solution**: Pause refresh before changing speaker roles
-   - Check that updates are paused in the status bar
-
-2. **"Show All" Sections Collapse Automatically**:
-   - **Solution**: Pause refresh before expanding sections
-   - Resume after reviewing expanded content
-
-3. **Update Interval Changes Don't Persist**:
-   - Settings are saved to localStorage automatically
-   - Check browser console for any storage errors
-
-4. **FAINT Data Gets Cleared**:
-   - This should no longer happen with the improved data preservation
-   - Check that AI is only updating fields with new information
-
-5. **No Audio/Transcription**:
-   - Verify RTMS is properly enabled in Zoom
-   - Check AssemblyAI API key in environment
-   - Monitor server console for connection errors
-
-6. **AI Analysis Not Working**:
-   - Verify Anthropic API key is set
-   - Check conversation logs for processing errors
-   - Ensure transcript data is being received
-
-### Debug Endpoints
-- `GET /api/debug/speakers` - Current speaker state
-- `GET /api/debug/speakers/detailed` - Comprehensive speaker analysis
-- `GET /api/debug/speakers/export` - Download complete logs
-- Browser console with debug mode for real-time logs
-
-## 🚀 Production Deployment
-
-### Environment Setup
-```bash
-# Production environment variables
-NODE_ENV=production
-DEBUG_MODE=false
-PORT=8080
+```javascript
+const ASYNC_CONFIG = {
+    speaker_labels: true,        // Speaker identification
+    auto_chapters: true,         // Automatic chapter detection
+    sentiment_analysis: true,    // Sentiment analysis
+    entity_detection: true,      // Named entity recognition
+    redact_pii: true,           // PII redaction
+    summarization: true,         // Auto-summarization
+    auto_highlights: true,       // Key highlights
+};
 ```
 
-### Security Configuration
-The application includes production-ready security headers:
-- **HSTS**: Strict-Transport-Security with 1-year max-age
-- **CSP**: Content Security Policy for XSS prevention
-- **Other Headers**: Referrer policy and additional OWASP protections
+See [AssemblyAI's API documentation](https://www.assemblyai.com/docs/api-reference/transcripts/submit) for all available options.
 
-### Docker Deployment
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 8080
-CMD ["npm", "start"]
+### Audio Processing Modes
+
+#### Mixed Mode (Default)
+- Single audio stream combining all participants
+- Most efficient for general transcription
+- Best for meetings with clear speakers
+
+#### Individual Mode
+- Separate transcription stream per participant
+- Better speaker attribution
+- Higher resource usage
+
+#### Multichannel Audio
+- Separate audio channels for different participants
+- Enables advanced speaker separation
+- Requires `AUDIO_CHANNELS=multichannel`
+
+## API Endpoints
+
+### POST /webhook
+Handles Zoom RTMS webhook events:
+- URL validation
+- Meeting start/stop events
+- Automatic RTMS connection setup
+
+## Error Handling
+
+The service includes comprehensive error handling:
+- Automatic reconnection for dropped connections
+- Graceful cleanup on meeting end
+- Audio buffer flushing to prevent data loss
+- Temporary file cleanup
+
+## Monitoring
+
+### Real-time Logs
+- Connection status updates
+- Audio processing statistics
+- Transcription progress
+- Error notifications
+
+### Example Log Output
+```
+📡 Connecting to Zoom signaling for meeting abc123
+✅ Zoom signaling connected for meeting abc123
+🎵 Connecting to Zoom media for meeting abc123
+✅ Zoom media connected for meeting abc123
+🚀 Started audio streaming for meeting abc123
+🎵 [abc12345] 100 chunks, 32768 bytes, 10.2s
+📝 [abc12345] FINAL: This is the final transcription.
 ```
 
-### Health Monitoring
-The system provides health endpoints:
-- `GET /api/status` - System health and status with configurable update tracking
-- Built-in memory usage and uptime monitoring
-- Automatic connection recovery and error handling
-- Update interval and pause state monitoring
+### Development Workflow
 
-## 📱 Mobile Support
-
-The dashboard is fully responsive and optimized for:
-- **Desktop**: Full dual-pane view with rich interactions and configurable refresh controls
-- **Tablet**: Adaptive layout with touch-friendly controls and pause functionality
-- **Mobile**: Single-column layout with swipe navigation between tabs
-- **In-Meeting Mobile**: Optimized for Zoom mobile app integration with simplified controls
-
-## 🎯 Use Cases
-
-- **Financial Advisory Meetings**: Real-time client qualification and coaching with speaker identification
-- **Sales Consultations**: Lead qualification and objection handling with role-based analysis
-- **Compliance Monitoring**: Automatic conversation logging with speaker attribution and data preservation
-- **Training & Development**: Advisor performance insights with conversation analysis
-- **Client Relationship Management**: Structured data extraction for CRM integration with running lists
-- **Solo Testing**: Development and testing with single-speaker scenarios
-
-## 💡 Advanced Features
-
-### Smart Data Management
-- **Intelligent Updates**: Only update fields with genuinely new information
-- **Data Preservation**: Existing valuable information is never overwritten unnecessarily
-- **Running Lists**: Maintain chronological records of all insights and observations
-- **Latest-First Display**: Show most recent and relevant information prominently
-
-### User Experience Enhancements
-- **Configurable Refresh**: User-adjustable update intervals (500ms - 30000ms)
-- **Pause/Resume Controls**: Seamless interaction without UI conflicts
-- **Collapsible Sections**: Manage information density with expand/collapse functionality
-- **Smart State Management**: UI state preserved during interactions
-
-### Speaker Intelligence
-- **Automatic Detection**: Identifies new speakers joining the conversation
-- **Role-Based Analysis**: Different AI insights based on speaker roles
-- **Solo Support**: Optimized for single-speaker testing and development
-- **Dynamic Assignment**: Change speaker roles during live conversations with pause protection
-
-### Real-Time Processing
-- **Sub-Second Latency**: From speech to transcript to AI insights
-- **Adaptive Refresh**: User-controlled update frequency
-- **Buffered Streaming**: Optimized audio chunks for best transcription quality
-- **Connection Recovery**: Automatic reconnection on network issues
-
-This system transforms traditional financial consultations into data-driven, AI-enhanced experiences that help advisors provide better service while ensuring no critical information is missed. The beautiful web interface makes it easy to monitor conversations in real-time and access valuable insights instantly, with intelligent data preservation and user-friendly interaction controls for optimal usability.
+1. Start your local server: `npm start`
+2. Start ngrok in another terminal: `ngrok http 8080`
+3. Update your Zoom app webhook URL with the ngrok URL
+4. Test with Zoom meetings
+5. Monitor logs in both your app and ngrok terminals
