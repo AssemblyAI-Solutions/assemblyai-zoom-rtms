@@ -4,6 +4,8 @@ A Node.js service that captures audio from Zoom Real-Time Media Streams (RTMS) a
 
 > 📖 **Official Documentation**: For complete Zoom RTMS documentation, visit [https://developers.zoom.us/docs/rtms/](https://developers.zoom.us/docs/rtms/)
 
+> 🎥 **End-to-End Demo**: If you'd like to see a complete demo as presented at **Zoom's Developer Summit 2025**, check it out here: [https://github.com/AssemblyAI-Solutions/rtms_assist_demo](https://github.com/AssemblyAI-Solutions/rtms_assist_demo)
+
 ## Features
 
 - **Real-time Transcription**: Live transcription during meetings using AssemblyAI's streaming API
